@@ -1,6 +1,6 @@
 {
     "name": "obsidian-replace-undo-fix",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Obsidian plugin to fix undo issue with character replacement.",
     "main": "main.js",
     "scripts": {

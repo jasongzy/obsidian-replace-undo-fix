@@ -1,31 +1,37 @@
-import { EditorSelection, Transaction, TransactionSpec } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
 import { Plugin } from 'obsidian';
+import { EditorView } from '@codemirror/view';
+import { EditorSelection, TransactionSpec, Transaction } from '@codemirror/state';
 
-// Regular expression to detect common full-width characters.
-// Includes full-width ASCII, CJK symbols, and punctuation.
-const FULL_WIDTH_CHARS_REGEX = /[\uFF01-\uFF5E\u3000-\u303F]/;
+// Includes full-width ASCII (U+FF01-U+FF5E), CJK symbols and punctuation (U+3000-U+303F),
+// and other effected characters.
+const PROBLEMATIC_CHARS_REGEX = /[\uFF01-\uFF5E\u3000-\u303F\u2000-\u206F\u00B7\uFFE5]/;
 
-export default class FullWidthUndoFixPlugin extends Plugin {
+// Specific two-character sequences that are input at once by some IMEs.
+const DOUBLE_ELLIPSIS = "\u2026\u2026"; // ……
+const DOUBLE_EM_DASH = "\u2014\u2014";   // ——
+
+export default class ReplaceUndoFixPlugin extends Plugin {
     async onload() {
         // console.log('Loading Replace Undo Fix Plugin');
 
         this.registerEditorExtension(EditorView.inputHandler.of(
             (view: EditorView, from: number, to: number, text: string, _insert: () => Transaction): boolean => {
-                // Check if:
-                // 1. A single character is being inserted.
-                // 2. The character is a full-width character.
-                // 3. There is an active selection being replaced (from !== to).
-                const isSingleChar = text.length === 1;
-                const isFullWidthChar = FULL_WIDTH_CHARS_REGEX.test(text);
+
                 const isReplacingSelection = from !== to;
+                let shoudHandleInput = false;
 
-                if (isSingleChar && isFullWidthChar && isReplacingSelection) {
-                    // console.log(`InputHandler: Detected full-width char [${text}] replacing selection from ${from} to ${to}.`);
+                if (text.length === 1 && PROBLEMATIC_CHARS_REGEX.test(text)) {
+                    shoudHandleInput = true;
+                    // console.log(`InputHandler: Detected single problematic char [${text}] replacing selection from ${from} to ${to}.`);
+                } else if (text === DOUBLE_ELLIPSIS || text === DOUBLE_EM_DASH) {
+                    shoudHandleInput = true;
+                    // console.log(`InputHandler: Detected double char sequence [${text}] replacing selection from ${from} to ${to}.`);
+                }
 
+                if (shoudHandleInput && isReplacingSelection) {
                     const transactionSpec: TransactionSpec = {
                         changes: { from, to, insert: text },
-                        selection: EditorSelection.cursor(from + text.length), // Place cursor after the inserted character
+                        selection: EditorSelection.cursor(from + text.length), // Place cursor after the inserted text
                         userEvent: 'input.replace', // Mark as a user-initiated replacement for undo history
                         scrollIntoView: true
                     };
