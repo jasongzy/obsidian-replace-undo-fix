@@ -29,6 +29,16 @@ export default class ReplaceUndoFixPlugin extends Plugin {
                 }
 
                 if (shoudHandleInput && isReplacingSelection) {
+                    // Fix conflict with obsidian-wikilink-preserver
+                    try {
+                        const textBefore = view.state.doc.sliceString(Math.max(0, from - 2), from);
+                        const textAfter = view.state.doc.sliceString(to, Math.min(view.state.doc.length, to + 2));
+                        if (textBefore.endsWith('[[') && textAfter.startsWith(']]')) {
+                            return false;
+                        }
+                    } catch (e) {
+                    }
+
                     const transactionSpec: TransactionSpec = {
                         changes: { from, to, insert: text },
                         selection: EditorSelection.cursor(from + text.length), // Place cursor after the inserted text

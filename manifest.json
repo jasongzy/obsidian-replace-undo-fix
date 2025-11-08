@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-replace-undo-fix",
 	"name": "Replace Undo Fix",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"minAppVersion": "0.15.0",
 	"description": "修复了当使用全角字符替换选中文本时，该操作未被正确添加到撤销栈的问题。",
 	"author": "jasongzy",
